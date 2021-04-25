@@ -13,11 +13,13 @@ public class ServerHandler implements Runnable {
     private BufferedReader in;
     private JList messageList;
     private ArrayList<String> chatLog;
+    private JScrollPane scrollPane;
 
-    public ServerHandler(Socket server, JList messageList, ArrayList<String> chatLog) throws IOException {
+    public ServerHandler(Socket server, JList messageList, ArrayList<String> chatLog, JScrollPane scrollPane) throws IOException {
         this.server = server;
         this.messageList = messageList;
         this.chatLog = chatLog;
+        this.scrollPane = scrollPane;
         in = new BufferedReader(new InputStreamReader(server.getInputStream()));
     }
 
