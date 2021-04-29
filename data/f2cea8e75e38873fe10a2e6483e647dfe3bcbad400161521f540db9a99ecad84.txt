@@ -1,0 +1,9 @@
+Message-id: SHA-256 f2cea8e75e38873fe10a2e6483e647dfe3bcbad400161521f540db9a99ecad84
+Time-sent: 1619657049
+From: a@a.com
+To: b@b.com
+Topic: #Topic
+Subject: Subject
+Contents: 2
+Hello
+This is a message!

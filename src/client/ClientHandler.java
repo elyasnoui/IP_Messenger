@@ -1,5 +1,6 @@
 package client;
 
+import javax.crypto.AEADBadTagException;
 import java.io.*;
 import java.net.Socket;
 import java.security.MessageDigest;
@@ -7,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class ClientHandler implements Runnable {
@@ -71,7 +73,117 @@ public class ClientHandler implements Runnable {
                         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
                         LocalDateTime now = LocalDateTime.now();
                         out.println("[SERVER] NOW "+dtf.format(now));
-                    } else if (message.startsWith("GET? SHA-256 ")) {
+                    }
+                    else if (message.startsWith("LIST? ")) {
+                        try {
+                            int fromTime = Integer.parseInt(message.substring(6, 16));
+                            int headers = Integer.parseInt(message.substring(17));
+
+                            File dir = new File("data");
+                            File[] fileArr = dir.listFiles();
+                            assert fileArr != null;
+                            Scanner scanner;
+
+                            if (headers == 0) {
+                                dir = new File("data");
+                                fileArr = dir.listFiles();
+                                assert fileArr != null;
+                                List<String> ids = new ArrayList<>();
+                                for (File f : fileArr) {
+                                    String filename = "data/"+f.getName();
+                                    scanner = new Scanner(new File(filename));
+
+                                    while (scanner.hasNextLine()) {
+                                        String line = scanner.nextLine();
+                                        String id = "";
+
+                                        if (line.startsWith("Message-id: SHA-256 "))
+                                            id = line.substring(20);
+
+                                        if (line.startsWith("Time-sent: ")) {
+                                            int timeSent = Integer.parseInt(line.substring(11));
+                                            if (timeSent > fromTime) ids.add(id);
+                                        }
+                                    }
+                                }
+
+                                if (!ids.isEmpty()) {
+                                    out.println("[SERVER] MESSAGES " + ids.size());
+
+                                    for (String id : ids)
+                                        out.println(id);
+                                }
+                            } else {
+                                List<String> filters = new ArrayList<>();
+                                boolean cancel = false;
+
+                                while (headers != 0) {
+                                    String filter = in.readLine();
+
+                                    if (filter == null) continue;
+
+                                    if (filter.equalsIgnoreCase("CANCEL?")) {
+                                        cancel = true;
+                                        break;
+                                    }
+                                    else {
+                                        filters.add(filter);
+                                        headers--;
+                                    }
+                                }
+
+                                if (!cancel) {
+                                    List<String> ids = new ArrayList<>();
+                                    for (File f : fileArr) {
+                                        String filename = "data/"+f.getName();
+                                        scanner = new Scanner(new File(filename));
+                                        boolean filtersMatched = true;
+
+                                        while (scanner.hasNextLine()) {
+                                            String line = scanner.nextLine();
+                                            String id = "";
+
+                                            if (line.startsWith("Message-id: SHA-256 "))
+                                                id = line.substring(20);
+
+                                            for (String filter : filters) {
+
+                                                if (filter.startsWith("Message-id: SHA-256 ") && line.startsWith("Message-id: SHA-256 "))
+                                                    filtersMatched = filter.substring(20).equalsIgnoreCase(line.substring(20));
+                                                else if (filter.startsWith("Time-sent: ") && line.startsWith("Time-sent: "))
+                                                    filtersMatched = filter.substring(11).equalsIgnoreCase(line.substring(11));
+                                                else if (filter.startsWith("From: ") && line.startsWith("From: "))
+                                                    filtersMatched = filter.substring(6).equalsIgnoreCase(line.substring(6));
+                                                else if (filter.startsWith("To: ") && line.startsWith("To: "))
+                                                    filtersMatched = filter.substring(4).equalsIgnoreCase(line.substring(4));
+                                                else if (filter.startsWith("Topic: ") && line.startsWith("Topic: "))
+                                                    filtersMatched = filter.substring(7).equalsIgnoreCase(line.substring(7));
+                                                else if (filter.startsWith("Subject: ") && line.startsWith("Subject: "))
+                                                    filtersMatched = filter.substring(9).equalsIgnoreCase(line.substring(9));
+                                                else if (filter.startsWith("Contents: ") && line.startsWith("Contents: "))
+                                                    filtersMatched = filter.substring(10).equalsIgnoreCase(line.substring(10));
+
+                                                if (!filtersMatched) break;
+                                            }
+
+                                            if (!filtersMatched) break;
+                                            else ids.add(id);
+                                        }
+                                    }
+
+                                    out.println("[SERVER] MESSAGES " + ids.size());
+                                    if (!ids.isEmpty())
+                                        for (String id : ids)
+                                            out.println(id);
+
+                                } else out.println("[SERVER] LIST? Command cancelled.");
+                            }
+
+                        } catch (NumberFormatException | StringIndexOutOfBoundsException ignored) {
+                            out.println("[SERVER] LIST? Command format error. (HELP? for help)");
+                        }
+                    }
+                    else if (message.startsWith("GET? SHA-256 ")) {
                         File dir = new File("data");
                         File[] fileArr = dir.listFiles();
                         assert fileArr != null;
@@ -110,7 +222,7 @@ public class ClientHandler implements Runnable {
 
                         String messageID = "Message-id: SHA-256 "+SHA256(preHashValue);
                         String time = "Time-sent: "+unixTime;
-                        String from = "From:";
+                        String from = "From: ";
                         String to = "To:";
                         String topic = "Topic:";
                         String subject = "Subject:";
