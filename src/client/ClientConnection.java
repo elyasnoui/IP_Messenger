@@ -1,5 +1,7 @@
 package client;
 
+import server.Server;
+
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
@@ -14,7 +16,7 @@ import java.net.Socket;
 
 public class ClientConnection {
     private JTextField ipAddressField, portField, usernameField;
-    private JButton connectButton;
+    private JButton clientButton;
     private JPanel panel;
     private JFrame frame;
 
@@ -70,7 +72,7 @@ public class ClientConnection {
             }
         });
 
-        connectButton.addActionListener(new ActionListener() {
+        clientButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (ipAddressField.getText().matches(ipRegex))
@@ -105,13 +107,53 @@ public class ClientConnection {
                 }
             }
         });
+        KeyAdapter listener = new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    if (ipAddressField.getText().matches(ipRegex))
+                        ipAddressField.setBorder(null);
+                    else ipAddressField.setBorder(borderError);
+
+                    if (portField.getText().matches(portRegex))
+                        portField.setBorder(null);
+                    else portField.setBorder(borderError);
+
+                    if (usernameField.getText().matches(usernameRegex))
+                        usernameField.setBorder(null);
+                    else usernameField.setBorder(borderError);
+
+                    if (!(ipAddressField.getBorder() == borderError || portField.getBorder() == borderError ||
+                            usernameField.getBorder() == borderError)) {
+                        ip = ipAddressField.getText();
+                        port = Integer.parseInt(portField.getText());
+                        username = usernameField.getText();
+
+                        try {
+                            Socket socket = new Socket(ip, port);
+
+                            BufferedReader serverSend = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                            String serverReceive = serverSend.readLine();
+
+                            if (serverReceive.equals("Accepted"))
+                                openMessenger(socket);
+                            else socket.close();
+
+                        } catch (IOException io) { io.printStackTrace(); }
+                    }
+                }
+            }
+        };
+        ipAddressField.addKeyListener(listener);
+        portField.addKeyListener(listener);
+        usernameField.addKeyListener(listener);
     }
 
     public void openMessenger(Socket socket) throws IOException {
         ClientMessenger clientMessenger = new ClientMessenger(socket, username);
 
         frame.remove(panel);
-        frame.setSize(700, 500);
+        frame.setSize(1280, 720);
         frame.add(clientMessenger.getPanel());
         frame.setVisible(true);
     }

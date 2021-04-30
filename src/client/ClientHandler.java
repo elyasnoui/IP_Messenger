@@ -22,8 +22,11 @@ public class ClientHandler implements Runnable {
             "[SERVER] Help section - All valid commands",
             "'PROTOCOL? version identifier' where version is an integer > 0 and identifier is a string (Left/Right)",
             "'TIME?' returns the current server time in yyyy/mm/dd hh:mm:ss",
-            "'LIST? since headers' time -> integers, headers -> integer where headers > 0",
-            "'GET? SHA-256 hash' hash -> hex value which corresponds to unique message",
+            "'LIST? since headers' since -> unix time (Integers), headers -> Amount of filters you want to add (0-6)",
+            "If your headers is over 0, you will need to enter the filters in the format they're stored, i.e:",
+            "From: a@a.com\nContents: 2\nTime-taken: 1600000000 etc...",
+            "'CANCEL?' if you want to cancel a LIST? request while entering headers",
+            "'GET? SHA-256 hash' hash -> SHA-256 hex value which corresponds to unique message",
             "'SAY? message' where message is a string that will broadcast to all peers",
             "'BYE!' leave the server"
     };
@@ -68,7 +71,8 @@ public class ClientHandler implements Runnable {
                     } catch (StringIndexOutOfBoundsException ignored) {
                         out.println("[SERVER] Please input PROTOCOL? command as first request. (HELP? for help)");
                     }
-                } else {
+                }
+                else {
                     if (message.equals("TIME?")) {
                         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
                         LocalDateTime now = LocalDateTime.now();
@@ -92,10 +96,10 @@ public class ClientHandler implements Runnable {
                                 for (File f : fileArr) {
                                     String filename = "data/"+f.getName();
                                     scanner = new Scanner(new File(filename));
+                                    String id = "";
 
                                     while (scanner.hasNextLine()) {
                                         String line = scanner.nextLine();
-                                        String id = "";
 
                                         if (line.startsWith("Message-id: SHA-256 "))
                                             id = line.substring(20);
@@ -107,12 +111,7 @@ public class ClientHandler implements Runnable {
                                     }
                                 }
 
-                                if (!ids.isEmpty()) {
-                                    out.println("[SERVER] MESSAGES " + ids.size());
-
-                                    for (String id : ids)
-                                        out.println(id);
-                                }
+                                outputList(ids);
                             } else {
                                 List<String> filters = new ArrayList<>();
                                 boolean cancel = false;
@@ -138,13 +137,22 @@ public class ClientHandler implements Runnable {
                                         String filename = "data/"+f.getName();
                                         scanner = new Scanner(new File(filename));
                                         boolean filtersMatched = true;
+                                        String id = "";
 
                                         while (scanner.hasNextLine()) {
                                             String line = scanner.nextLine();
-                                            String id = "";
 
-                                            if (line.startsWith("Message-id: SHA-256 "))
+                                            if (line.startsWith("Message-id: SHA-256 ")) {
                                                 id = line.substring(20);
+                                            }
+
+                                            if (line.startsWith("Time-sent: ")) {
+                                                int timeSent = Integer.parseInt(line.substring(11));
+                                                if (timeSent < fromTime) {
+                                                    filtersMatched = false;
+                                                    break;
+                                                }
+                                            }
 
                                             for (String filter : filters) {
 
@@ -165,17 +173,11 @@ public class ClientHandler implements Runnable {
 
                                                 if (!filtersMatched) break;
                                             }
-
-                                            if (!filtersMatched) break;
-                                            else ids.add(id);
                                         }
+                                        if (filtersMatched) ids.add(id);
                                     }
 
-                                    out.println("[SERVER] MESSAGES " + ids.size());
-                                    if (!ids.isEmpty())
-                                        for (String id : ids)
-                                            out.println(id);
-
+                                    outputList(ids);
                                 } else out.println("[SERVER] LIST? Command cancelled.");
                             }
 
@@ -290,6 +292,18 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private void outputList(List<String> ids) {
+        if (!ids.isEmpty()) {
+            String output = "[SERVER] MESSAGES " + ids.size() + "\n";
+            for (int i = 0; i < ids.size(); i++) {
+                if (i != ids.size()-1)
+                    output += ids.get(i) + "\n";
+                else output += ids.get(i);
+            }
+            out.println(output);
+        } else out.println("[SERVER] SORRY");
+    }
+
     private String SHA256(final String preHash) {
         try{
             final MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -305,6 +319,10 @@ public class ClientHandler implements Runnable {
         } catch(Exception ex){
             throw new RuntimeException(ex);
         }
+    }
+
+    private void request(String message) {
+        out.println(message);
     }
 
     private void broadcast(String message) {

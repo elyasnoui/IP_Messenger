@@ -1,6 +1,8 @@
 package server;
 
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,6 +23,14 @@ public class ServerHandler implements Runnable {
         this.chatLog = chatLog;
         this.scrollPane = scrollPane;
         in = new BufferedReader(new InputStreamReader(server.getInputStream()));
+
+        Timer timer = new Timer(500, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent arg0) {
+                messageList.setListData(chatLog.toArray());
+            }
+        });
+        timer.start();
     }
 
     @Override
@@ -34,6 +44,7 @@ public class ServerHandler implements Runnable {
 
                 chatLog.add(response);
                 messageList.setListData(chatLog.toArray());
+                scrollPane.getVerticalScrollBar().setValue(scrollPane.getVerticalScrollBar().getMaximum()+1);
             }
         } catch (IOException e) { e.printStackTrace(); }
         finally {
