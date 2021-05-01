@@ -42,7 +42,7 @@ public class ClientMessenger {
     private static final String nameRegex = "[A-Z][a-zA-z-]{1,34}";
     private static final String topicRegex = "[#][A-Za-z0-9]{1,20}";
     private static final String subjectRegex = "[A-Za-z0-9 ?!._,-]{1,20}";
-    private static final String contentRegex = "[A-Za-z0-9\s\n?!\"._,-]{1,75}";
+    private static final String contentRegex = "[A-Za-z0-9\\s\n?!\"._,-]{1,75}";
     private static final LineBorder borderError = new LineBorder(Color.RED, 1);
 
     public ClientMessenger(Socket socket, String username) throws IOException {
