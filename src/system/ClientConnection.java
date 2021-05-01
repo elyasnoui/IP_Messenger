@@ -38,13 +38,12 @@ public class ClientConnection {
         // Initialising the JFrame and setting parameters
         client.frame = new JFrame("Client");
         client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        client.frame.add(client.panel);
-        client.frame.pack();
-        client.frame.setVisible(true);
-        client.frame.setSize(400, 218);
+        client.frame.setSize(400, 210);
         client.frame.setResizable(false);
         client.frame.setFocusable(true);
         client.frame.setFocusTraversalKeysEnabled(false);
+        client.frame.add(client.panel);
+        client.frame.setVisible(true);
     }
 
     // Constructor is private, as this should only be instantiated from the class' 'main' method

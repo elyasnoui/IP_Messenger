@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="ClientConnection:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/ClientConnection_jar</output-path>
+    <root id="archive" name="IP_Messenger.jar">
+      <element id="module-output" name="IP_Messenger" />
+    </root>
+  </artifact>
+</component>
