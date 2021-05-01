@@ -174,7 +174,7 @@ public class ClientConnection {
      *     This is used when a connection has been established from a client to a server.
      * </p>
      * @param socket {@link Socket}
-     * @throws IOException {@link IOException}
+     * @throws IOException {@link IOException} gets ignored.
      */
     private void openMessenger(Socket socket) throws IOException {
         // Creating new Client Messenger object and passing in socket and username
